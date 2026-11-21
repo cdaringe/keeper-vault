@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Keeper Vault</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f1e7d2;
+      --muted: #b8aa97;
+      --edge: #514137;
+      --gold: #f1be73;
+      --mint: #9fdfc5;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #151312;
+      color: var(--ink);
+      font:
+        16px/1.45 'Trebuchet MS',
+        system-ui,
+        sans-serif;
+    }
+    header {
+      border-bottom: 1px solid var(--edge);
+      background: #231c19;
+    }
+    header > div,
+    main {
+      max-width: 1050px;
+      margin: auto;
+      padding: 18px 28px;
+    }
+    header > div {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+    .gem {
+      display: inline-grid;
+      place-items: center;
+      color: #acede0;
+      background: linear-gradient(
+        135deg,
+        #4c9a8c 0 40%,
+        #317569 40% 65%,
+        #215149 65%
+      );
+      clip-path: polygon(30% 0, 75% 0, 100% 34%, 55% 100%, 0 38%);
+      width: 31px;
+      height: 34px;
+    }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 88% 100%, #38473c, transparent 60%),
+        linear-gradient(120deg, #35251e, #221e1c);
+      border: 1px solid var(--edge);
+      padding: 32px;
+      margin: 18px 0 24px;
+    }
+    .hero:after {
+      content: '';
+      position: absolute;
+      right: 6%;
+      bottom: -28px;
+      width: 80px;
+      height: 130px;
+      transform: rotate(17deg);
+      background: linear-gradient(
+        90deg,
+        #2d6559 28%,
+        #68a995 29% 62%,
+        #438376 63%
+      );
+      clip-path: polygon(50% 0, 90% 20%, 90% 90%, 40% 100%, 10% 75%, 10% 25%);
+      opacity: 0.65;
+    }
+    h1 {
+      font:
+        700 clamp(32px, 5vw, 50px)/1.1 Georgia,
+        serif;
+      margin: 0 0 10px;
+      color: #ffdda6;
+    }
+    .hero p {
+      margin: 0;
+      max-width: 73%;
+      color: var(--muted);
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0 0 18px;
+    }
+    button,
+    input {
+      font: inherit;
+    }
+    button {
+      border: 1px solid var(--edge);
+      background: #312820;
+      color: var(--ink);
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 6px 12px;
+    }
+    button:hover,
+    button:focus-visible {
+      border-color: var(--gold);
+    }
+    button[aria-pressed='true'],
+    .primary {
+      color: #251d16;
+      background: var(--gold);
+      border-color: #d9a356;
+    }
+    article {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 15px 18px;
+      background: #241f1c;
+      border: 1px solid var(--edge);
+      border-left: 3px solid #987148;
+      margin: 7px 0;
+      border-radius: 4px;
+    }
+    .icon {
+      background: #343d34;
+      color: var(--mint);
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+    }
+    .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .detail,
+    small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .actions {
+      position: relative;
+      display: flex;
+      gap: 6px;
+    }
+    .menu {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      z-index: 2;
+      min-width: 145px;
+      background: #352b24;
+      padding: 5px;
+      border: 1px solid var(--edge);
+      box-shadow: 0 6px 20px #0008;
+    }
+    .menu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+    }
+    .live {
+      color: var(--mint);
+      align-self: center;
+      margin: 0 6px;
+      font-size: 14px;
+    }
+    dialog {
+      max-width: min(480px, 92vw);
+      background: #2c241f;
+      color: var(--ink);
+      border: 1px solid #917250;
+      border-radius: 6px;
+    }
+    dialog::backdrop {
+      background: #080705bc;
+    }
+    dialog input {
+      width: 100%;
+      padding: 8px;
+    }
+    dialog p {
+      overflow-wrap: anywhere;
+    }
+    dialog footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    #msg {
+      color: var(--mint);
+      min-height: 1.4em;
+    }
+    h2 {
+      font-size: 20px;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+    @media (max-width: 600px) {
+      main,
+      header > div {
+        padding: 12px;
+      }
+      .hero {
+        padding: 22px;
+      }
+      article {
+        flex-wrap: wrap;
+      }
+      .actions {
+        margin-left: auto;
+      }
+      .info {
+        min-width: 55%;
+      }
+    }
+  #practice {position:relative;z-index:1;margin-top:1rem}
+    #practice label {display:inline-grid;gap:.25rem;margin:0 .75rem .5rem 0}
+    #practice select {font:inherit;padding:.4rem;max-width:100%}
+    #practice article {flex-wrap:wrap}
+    .active-slot{border-left-color:var(--mint)} .slot-label{color:var(--mint);font-size:13px} #profilePath{color:var(--muted);overflow-wrap:anywhere} .actions{flex-wrap:wrap}
+    </style>
+  <header>
+    <div><span class="gem" aria-hidden="true"></span>Keeper Vault</div>
+  </header>
+  <main>
+    <h1>Save library</h1><p id="profilePath"></p><nav aria-label="Filter saves"></nav>
+    <div id="msg" role="status"></div>
+    <section id="list" aria-label="Saves"></section>
+    <section class="hero">
+      <h2>Boss practice</h2>
+      <p>Save and quit before the fight. Choose your world and character, then set a checkpoint. After a defeat, quit the game and retry from that same point.</p>
+    <div id="practice"></div></section>
+  </main>
+  <dialog id="modal">
+    <form method="dialog">
+      <h2></h2>
+      <p></p>
+      <input maxlength="120" aria-label="Save alias" />
+      <footer>
+        <button value="cancel" formnovalidate>Cancel</button
+        ><button value="ok" class="primary">Save</button>
+      </footer>
+    </form>
+  </dialog>
+  <script>
+    const key = '__TOKEN__',
+      list = document.querySelector('#list'),
+      msg = document.querySelector('#msg'),
+      dialog = document.querySelector('dialog');
+    let rows = [],
+      filter = 'Active slots',
+      history = '',
+      busy = false;
+    function el(tag, text, cls) {
+      const n = document.createElement(tag);
+      n.textContent = text;
+      if (cls) n.className = cls;
+      return n;
+    }
+    function button(text, fn, cls) {
+      const b = el('button', text, cls);
+      b.onclick = fn;
+      return b;
+    }
+    function closeMenu() {
+      document.querySelector('.menu')?.remove();
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.actions')) closeMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+    function ask(title, desc, action, value) {
+      dialog.querySelector('h2').textContent = title;
+      dialog.querySelector('p').textContent = desc;
+      const input = dialog.querySelector('input');
+      input.hidden = value === undefined;
+      input.value = value ?? '';
+      dialog.querySelector('.primary').textContent = action;
+      dialog.returnValue = 'cancel';
+      dialog.showModal();
+      if (!input.hidden) input.focus();
+      return new Promise(
+        (resolve) =>
+          (dialog.onclose = () =>
+            resolve(dialog.returnValue === 'ok' ? input.value : null)),
+      );
+    }
+    async function request(cmd) {
+      if (busy) return;
+      busy = true;
+      try {
+        const opts = { headers: { 'X-Vault-Key': key } };
+        if (cmd) {
+          opts.method = 'POST';
+          opts.body = JSON.stringify(cmd);
+        }
+        const res = await fetch(cmd ? '/action' : '/saves', opts);
+        if (!res.ok) throw Error(await res.text());
+        rows = await res.json();
+        render();
+        msg.textContent = cmd
+          ? {
+              backup: 'Backup created.',
+              copy: 'Copy saved.',
+              history: '',
+              boss:'Pre-fight checkpoint saved. You can start the fight.',
+              retry:'World and character restored. Open Core Keeper to try again.',
+              activate: 'Version restored. Look for “Before restore” in this slot’s history to undo.',
+              alias: 'Alias saved.',
+              pin: 'Pin updated.',
+            }[cmd.op]
+          : '';
+        if(cmd?.op==='backup'){
+          const backed=rows.find(r=>r.id===cmd.id);
+          msg.textContent='Backup created for '+(backed.alias||backed.name)+' · '+backed.kind+' slot '+backed.slot+'. ';
+          msg.append(button('View backups',()=>{filter='Backups';history='';msg.replaceChildren();render()}));
+        }
+      } catch (e) {
+        msg.textContent = e.message;
+      } finally {
+        busy = false;
+      }
+    }
+    function when(r) {
+      const d = new Date(r.created.replace(' ', 'T'));
+      if (!Number.isFinite(+d)) return r.created;
+      const seconds = Math.max(0, Math.floor((Date.now()-d)/1000));
+      const [unit, size] = seconds < 60 ? ['second',1] : seconds < 3600 ? ['minute',60] : seconds < 86400 ? ['hour',3600] : ['day',86400];
+      const ago = new Intl.RelativeTimeFormat(undefined,{numeric:'always'}).format(-Math.floor(seconds/size),unit);
+      return ago + ' · ' + d.toLocaleString();
+    }
+    function source(r) {
+      return ({Copy:'Manual checkpoint',Backup:'Before restore','Game backup':'Game backup'})[r.status] || r.status;
+    }
+    function slot(r) {return r.kind+'-'+r.slot}
+    function renderPractice() {
+      const panel=document.querySelector('#practice');
+      const selected=[...panel.querySelectorAll('select')].map(select=>select.value);
+      panel.replaceChildren();
+      const selectors=['World','Character'].map((kind,index)=>{
+        const label=el('label',kind), select=el('select','');
+        for(const row of rows.filter(r=>r.kind===kind && r.status==='Live')){
+          select.add(new Option((row.alias||row.name)+' · slot '+row.slot,row.id));
+        }
+        if(selected[index] && [...select.options].some(o=>o.value===selected[index])) select.value=selected[index];
+        label.append(select);panel.append(label);return select;
+      });
+      const capture=button('Set pre-fight checkpoint',()=>request({op:'boss',id:selectors[0].value,value:selectors[1].value}),'primary');
+      capture.disabled=selectors.some(s=>!s.value);
+      panel.append(capture);
+      for(const point of rows.filter(r=>r.kind==='Boss').sort((a,b)=>b.created.localeCompare(a.created))){
+        const card=el('article',''),info=el('div','','info');
+        info.append(el('strong',point.name),el('div',when(point),'detail'));
+        card.append(info,button('Retry fight',async()=>{
+          if(await ask('Retry this fight?',point.name+' · '+when(point)+'. Quit Core Keeper and let Steam finish syncing. Your current world and character will each be backed up before both are restored.','Restore both')!==null)
+            request({op:'retry',id:point.id});
+        },'primary')); panel.append(card);
+      }
+    }
+    function render() {
+      renderPractice();
+      const liveRow=rows.find(r=>r.status==='Live');
+      document.querySelector('#profilePath').textContent=liveRow?'Open profile · '+liveRow.path.split('/').slice(0,-2).join('/'):'';
+
+      const nav = document.querySelector('nav');
+      nav.replaceChildren();
+      for (const f of ['Active slots', 'Worlds', 'Characters', 'Pinned', 'Backups']) {
+        const b = button(f, () => {
+          filter = f; history='';
+          render();
+        });
+        b.setAttribute('aria-pressed', filter === f);
+        nav.append(b);
+      }
+      list.replaceChildren();
+      if(!history && filter==='Active slots') list.append(el('p','These are the versions Core Keeper will load when you choose each slot.','detail'));
+      if(!history && filter==='Backups') list.append(el('p','Saved versions you can restore to their original slots.','detail'));
+      const liveSlots = new Set(rows.filter(r=>r.status==='Live').map(slot));
+      if (history) {
+        const live = rows.find(r=>slot(r)===history && r.status==='Live');
+        list.append(button('← Save library',()=>{history='';render()}),el('h2','Restore history · '+(live?.alias||live?.name||history)),el('p','Choose a version to restore to '+history.replace('-', ' slot ')+'. Your current progress is backed up first.'));
+        if(live) list.append(el('p','● Active in this slot: '+(live.alias||live.name),'slot-label'));
+      }
+      const shown = rows.filter(r=>r.kind!=='Boss')
+        .filter(
+          (r) => history ? slot(r)===history && r.status!=='Live' : (r.status==='Live' || !liveSlots.has(slot(r)) || ['Pinned','Backups'].includes(filter)) && ((filter === 'Active slots' && r.status==='Live') ||
+            filter === r.kind + 's' ||
+            (filter === 'Pinned' && r.pinned) ||
+            (filter === 'Backups' && r.status !== 'Live')),
+        )
+        .sort(
+          (a, b) =>
+            (!history && b.pinned - a.pinned) ||
+            Number(b.status === 'Live') - Number(a.status === 'Live') ||
+            b.created.localeCompare(a.created) ||
+            a.name.localeCompare(b.name),
+        );
+      if (!shown.length) list.append(el('p', history ? 'No earlier version is available yet. Use Back up now on the live save to start its history.' : 'No saves in this view.'));
+      for (const r of shown) {
+        const row = el('article', '',r.status==='Live'?'active-slot':''),
+          info = el('div', '', 'info'),
+          actions = el('div', '', 'actions'),
+          act = (op, value = '') => request({ op, id: r.id, value });
+        info.append(
+          el('div', (r.pinned ? '★ ' : '') + (history ? when(r) : r.alias || r.name), 'title'),
+          el(
+            'div',
+            [
+              r.alias ? r.name : null,
+              r.kind + ' slot ' + r.slot,
+              r.status==='Live'?null:source(r),
+              history ? (r.alias || r.name) : r.created,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            'detail',
+          ),
+        );
+        if(r.status==='Live') info.prepend(el('strong','● Active in slot '+r.slot,'slot-label'));
+        if(r.matches_active) info.prepend(el('strong','Matches active slot','slot-label'));
+        function menu() {
+          closeMenu();
+          const m = el('div', '', 'menu');
+          m.append(
+            button(r.pinned ? 'Unpin' : 'Pin', () => act('pin')),
+            button('Edit alias', async () => {
+              closeMenu();
+              const v = await ask('Edit alias', r.name, 'Save alias', r.alias);
+              if (v !== null) act('alias', v);
+            }),
+            button('Show path', async () => {
+              closeMenu();
+              if ((await ask('Save path', r.path, 'Copy path')) !== null) {
+                try {
+                  await navigator.clipboard.writeText(r.path);
+                  msg.textContent = 'Path copied.';
+                } catch {
+                  msg.textContent = r.path;
+                }
+              }
+            }),
+          );
+          actions.append(m);
+          m.firstChild.focus();
+        }
+        row.oncontextmenu = (e) => {
+          e.preventDefault();
+          menu();
+        };
+        actions.append(r.status==='Live'?button('Back up now',()=>act('backup'),'primary'):button('Copy',()=>act('copy')));
+        if (r.status === 'Live') {
+          actions.append(button('↶ Go back', async () => {history=slot(r);render();await act('history')}));
+          const versions=rows.filter(v=>slot(v)===slot(r)&&v.status!=='Live').sort((a,b)=>b.created.localeCompare(a.created));
+          if (versions.length) info.append(el('div','Latest restore point: '+when(versions[0]),'detail'));
+        } else {
+          actions.append(
+            button(
+              'Restore',
+              async () => {
+                if (
+                  (await ask(
+                    'Restore ' + (r.alias || r.name) + '?',
+                    source(r)+' · '+when(r)+'. Close Core Keeper and let Steam finish syncing. The current ' +
+                      r.kind.toLowerCase() +
+                      ' in slot ' +
+                      r.slot +
+                      ' will be backed up before replacement.',
+                    'Back up & restore',
+                  )) !== null
+                )
+                  act('activate');
+              },
+              'primary',
+            ),
+          );
+        }
+        const more = button('•••', () =>
+          actions.querySelector('.menu') ? closeMenu() : menu(),
+        );
+        more.setAttribute('aria-label', 'More actions for ' + r.name);
+        actions.append(more);
+        row.append(
+          el('span', r.kind === 'World' ? '◆' : '♟', 'icon'),
+          info,
+          actions,
+        );
+        list.append(row);
+      }
+    }
+    request();
+  </script>
+</html>
