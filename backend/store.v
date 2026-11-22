@@ -16,6 +16,7 @@ struct Label {
 }
 
 struct Row {
+	checkpoint_saves []CheckpointSave
 	checkpoint_scope string
 	world_created    string
 	source_modified  string
@@ -33,6 +34,13 @@ struct Row {
 	pinned           bool
 mut:
 	matches_active bool
+}
+
+struct CheckpointSave {
+	kind            string
+	slot            string
+	name            string
+	source_modified string
 }
 
 struct Snapshot {
@@ -94,7 +102,7 @@ fn (s Store) library_rows(labels map[string]Label) ![]Row {
 			members := bundle.checkpoint_members()!
 			status := if layout.is_trashed_checkpoint(id) { 'Trashed' } else { 'Checkpoint' }
 			bundle_labels := bundle.labels()!
-			rows << Row{ note: bundle_labels['checkpoint'].note, id: id, kind: 'Checkpoint', status: status, name: members.map(it.name).join(' + '), checkpoint_scope: members.map(it.kind + ': ' + it.name).join(' · '), created: members[0].created }
+			rows << Row{ note: bundle_labels['checkpoint'].note, id: id, kind: 'Checkpoint', status: status, name: members.map(it.name + ' (' + it.slot + ')').join(' + '), checkpoint_scope: members.map(it.kind + ': ' + it.name + ' (' + it.slot + ')').join(' · '), checkpoint_saves: members.map(CheckpointSave{ kind: it.kind, slot: it.slot, name: it.name, source_modified: it.source_modified }), created: members[0].created }
 			continue
 		}
 		if !layout.is_snapshot(id) { continue }

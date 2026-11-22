@@ -1,6 +1,7 @@
 import JSON5 from 'json5';
 import { createFixture } from './fixture.ts';
-import type { AddressInfo } from 'node:net';
+import { digest } from './files.ts';
+import { withServer, type Call } from './server.ts';
 import type { Save } from '../frontend/model';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -18,90 +19,15 @@ import {
   rm,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve, relative, dirname } from 'node:path';
-import { createServer, connect } from 'node:net';
-import { setTimeout as delay } from 'node:timers/promises';
-
-async function digest(
-  root: string,
-  dir = root,
-  result: Record<string, string> = {},
-) {
-  for (const item of await readdir(dir, { withFileTypes: true })) {
-    const p = join(dir, item.name);
-    if (item.isDirectory()) await digest(root, p, result);
-    if (item.isFile())
-      result[relative(root, p)] = createHash('sha256')
-        .update(await readFile(p))
-        .digest('hex');
-  }
-  return result;
-}
+import { join, resolve, dirname } from 'node:path';
 const [binaryArg, fixtureArg] = process.argv.slice(2);
 if (!binaryArg)
   throw Error('Usage: node tests/integration.ts BINARY [FIXTURE]');
 const work = await mkdtemp(join(tmpdir(), 'keeper-test-')),
   profile = join(work, 'profile');
 
-type Call = (
-  op?: string,
-  id?: string,
-  value?: string,
-  dangerous_mode?: boolean,
-) => Promise<Save[]>;
-async function server(run: (call: Call) => Promise<void>) {
-  const probe = createServer().listen(0, '127.0.0.1');
-  await once(probe, 'listening');
-  const { port } = probe.address() as AddressInfo;
-  await new Promise((ok) => probe.close(ok));
-  const base = 'http://127.0.0.1:' + port;
-  const proc = spawn(resolve(binaryArg), ['--serve', profile], {
-    env: {
-      ...process.env,
-      KEEPER_PORT: String(port),
-      XDG_DATA_HOME: join(work, 'data'),
-    },
-    stdio: 'inherit',
-  });
-  const exited = once(proc, 'exit');
-  try {
-    let page;
-    for (let i = 0; i < 100 && !page; i++) {
-      if (proc.exitCode !== null) throw Error('Server exited');
-      try {
-        page = await (await fetch(base)).text();
-      } catch {
-        await delay(50);
-      }
-    }
-    const key = page?.match(/name="vault-key"\s+content="([^"]+)"/)?.[1];
-    assert.ok(key, 'server session key');
-    const idle = connect(port, '127.0.0.1');
-    try {
-      await once(idle, 'connect');
-      const ready = await fetch(base, { signal: AbortSignal.timeout(2000) });
-      assert.equal(ready.status, 200);
-      await ready.arrayBuffer();
-    } finally {
-      idle.destroy();
-    }
-    await run(async (op, id, value = '', dangerous_mode = false) => {
-      const res = await fetch(base + (op ? '/action' : '/saves'), {
-        headers: { 'X-Vault-Key': key },
-        method: op ? 'POST' : 'GET',
-        body: op
-          ? JSON.stringify({ op, id, value, dangerous_mode })
-          : undefined,
-        signal: AbortSignal.timeout(20000),
-      });
-      if (!res.ok) throw Error(res.status + ' ' + (await res.text()));
-      return res.json();
-    });
-  } finally {
-    proc.kill();
-    await exited;
-  }
-}
+const server = (run: (call: Call) => Promise<void>) =>
+  withServer(resolve(binaryArg), profile, join(work, 'data'), run);
 
 const fixture = fixtureArg ? resolve(fixtureArg) : join(work, 'fixture');
 let labelled: string;
@@ -157,13 +83,41 @@ try {
     assert.equal(points.length, 1);
     for (const member of [world, char]) {
       const args = member === world ? [world.id, ''] : ['', char.id];
+      const current = (await call()).find((row) => row.id === member.id);
       const single = (await call('checkpoint', args[0], args[1])).find(
         (r) => r.status === 'Checkpoint' && r.id !== points[0],
       );
-      assert.equal(single.checkpoint_scope, member.kind + ': ' + member.name);
+      assert.equal(
+        single.checkpoint_scope,
+        member.kind + ': ' + member.name + ' (' + member.slot + ')',
+      );
       assert.deepEqual(
         ids(await call('checkpoint', args[0], args[1])).sort(),
         [...points, single.id].sort(),
+      );
+      assert.equal(
+        single.checkpoint_saves[0].source_modified,
+        current.source_modified,
+      );
+      // Older checkpoints may not have recorded the original save time.
+      const root = join(
+        work,
+        'data',
+        'keeper-vault',
+        createHash('sha256').update(profile).digest('hex'),
+        single.id,
+      );
+      const entry = (await readdir(root)).find((name) =>
+        name.startsWith('save-'),
+      );
+      const manifestPath = join(root, entry, 'snapshot.json');
+      const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+      delete manifest.source_modified;
+      await writeFile(manifestPath, JSON.stringify(manifest));
+      assert.equal(
+        (await call()).find((row) => row.id === single.id).checkpoint_saves[0]
+          .source_modified,
+        '',
       );
       const other = member === world ? char : world;
       const before = await readFile(other.path);
@@ -205,7 +159,26 @@ try {
       await gameExited;
     }
     const row = first.find((r) => r.id === points[0]);
-    assert.equal(row.name, world.name + ' + ' + char.name);
+    assert.equal(
+      row.name,
+      world.name +
+        ' (' +
+        world.slot +
+        ') + ' +
+        char.name +
+        ' (' +
+        char.slot +
+        ')',
+    );
+    assert.deepEqual(
+      row.checkpoint_saves,
+      [world, char].map((member) => ({
+        kind: member.kind,
+        name: member.name,
+        slot: member.slot,
+        source_modified: member.source_modified,
+      })),
+    );
     // Simulate the directory name used by an earlier installation.
     const library = join(
       work,

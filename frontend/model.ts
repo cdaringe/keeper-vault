@@ -1,3 +1,10 @@
+export interface CheckpointSave {
+  kind: string;
+  slot: string;
+  name: string;
+  source_modified?: string;
+}
+
 export interface Save {
   id: string;
   name: string;
@@ -7,6 +14,7 @@ export interface Save {
   path: string;
   created: string;
   checkpoint_scope?: string;
+  checkpoint_saves?: CheckpointSave[];
   captured?: string;
   source_modified?: string;
   world_created?: string;
@@ -51,8 +59,8 @@ export function source(r: Save) {
     }[r.status] || r.status
   );
 }
-export function saveLabel(r: Save) {
-  return r.name;
+export function saveLabel(r: Pick<Save, 'kind' | 'name' | 'slot'>) {
+  return r.kind === 'Checkpoint' ? r.name : `${r.name} (${r.slot})`;
 }
 export function slot(r: Save) {
   return r.kind + '-' + r.slot;

@@ -4,10 +4,12 @@ import { createMemo, createSignal, For, Show } from 'solid-js';
 import { Action } from './action';
 import { CheckpointTrash } from './checkpoint-trash';
 import { saveLabel, when, type Command, type Save } from './model';
+import { SaveTime } from './save-time';
 
 interface Props {
   rows: Save[];
   pending: string;
+  refreshFailed: boolean;
   request(cmd: Command): Promise<void>;
   ask(
     title: string,
@@ -108,7 +110,23 @@ export function Checkpoints(props: Props) {
     return (
       <tr id={'point-' + point.id} tabindex={-1}>
         <th scope="row">
-          <span>{point.checkpoint_scope || point.name}</span>
+          <Show
+            when={point.checkpoint_saves?.length}
+            fallback={<span>{point.checkpoint_scope || point.name}</span>}
+          >
+            <For each={point.checkpoint_saves}>
+              {(save) => (
+                <div class="checkpoint-save">
+                  <span>
+                    {save.kind}: {saveLabel(save)}
+                  </span>
+                  <div class="detail">
+                    <SaveTime value={save.source_modified} />
+                  </div>
+                </div>
+              )}
+            </For>
+          </Show>
           <Show when={latest() && !deletedOnly()}>
             <small>Latest</small>
           </Show>
@@ -165,56 +183,78 @@ export function Checkpoints(props: Props) {
         <div class="checkpoint-controls">
           <For each={['World', 'Character']}>
             {(kind) => (
-              <label>
-                {kind}
-                <select
-                  aria-label={kind}
-                  onChange={(e) =>
-                    (kind === 'World' ? setWorld : setCharacter)(
-                      e.currentTarget.value,
-                    )
-                  }
+              <div class="checkpoint-selection">
+                <label>
+                  {kind}
+                  <select
+                    aria-label={kind}
+                    aria-describedby={kind.toLowerCase() + '-save-time'}
+                    onChange={(e) =>
+                      (kind === 'World' ? setWorld : setCharacter)(
+                        e.currentTarget.value,
+                      )
+                    }
+                  >
+                    <option
+                      value=""
+                      disabled
+                      selected={
+                        kind === 'World'
+                          ? !worldId() && world() !== 'skip'
+                          : !characterId() && character() !== 'skip'
+                      }
+                    >
+                      Choose {kind.toLowerCase()}…
+                    </option>
+                    <option
+                      value="skip"
+                      selected={
+                        (kind === 'World' ? world() : character()) === 'skip'
+                      }
+                    >
+                      Skip {kind.toLowerCase()}
+                    </option>
+                    <For each={live(kind)}>
+                      {(r) => (
+                        <option
+                          value={r.id}
+                          selected={
+                            r.id ===
+                            (kind === 'World' ? worldId() : characterId())
+                          }
+                        >
+                          {saveLabel(r)}
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+                <p
+                  class="detail"
+                  id={kind.toLowerCase() + '-save-time'}
+                  aria-live="polite"
                 >
-                  <option
-                    value=""
-                    disabled
-                    selected={
-                      kind === 'World'
-                        ? !worldId() && world() !== 'skip'
-                        : !characterId() && character() !== 'skip'
-                    }
-                  >
-                    Choose {kind.toLowerCase()}…
-                  </option>
-                  <option
-                    value="skip"
-                    selected={
-                      (kind === 'World' ? world() : character()) === 'skip'
-                    }
-                  >
-                    Skip {kind.toLowerCase()}
-                  </option>
-                  <For each={live(kind)}>
-                    {(r) => (
-                      <option
-                        value={r.id}
-                        selected={
-                          r.id ===
-                          (kind === 'World' ? worldId() : characterId())
-                        }
-                      >
-                        {saveLabel(r)}
-                      </option>
+                  <Show
+                    when={live(kind).find(
+                      (row) =>
+                        row.id ===
+                        (kind === 'World' ? worldId() : characterId()),
                     )}
-                  </For>
-                </select>
-              </label>
+                  >
+                    {(save) => <SaveTime value={save().source_modified} />}
+                  </Show>
+                </p>
+              </div>
             )}
           </For>
           <Action
             label="Create checkpoint"
             pending={props.pending}
-            reason={missing()}
+            reason={
+              props.refreshFailed
+                ? 'Refresh saves successfully before creating a checkpoint.'
+                : missing()
+            }
             click={() =>
               props.request({
                 op: 'checkpoint',
@@ -240,7 +280,7 @@ export function Checkpoints(props: Props) {
         <thead>
           <tr>
             {sortHeader('name', 'Included saves')}
-            {sortHeader('created', 'Created')}
+            {sortHeader('created', 'Captured')}
             {sortHeader('note', 'Note')}
             <th scope="col">Actions</th>
           </tr>

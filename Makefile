@@ -27,12 +27,19 @@ $(LOCAL_V):
 
 BROWSER ?= $(shell for browser in chromium google-chrome brave-browser chromium-browser; do command -v $$browser && break; done)
 
-export PROFILE FIXTURE BROWSER
+export PROFILE FIXTURE BROWSER CHECKPOINT
 run: build
 	./keeper-vault $${PROFILE:+"$$PROFILE"}
 
 test: build
-	node tests/integration.ts ./keeper-vault "$$FIXTURE"
+	node development/sandbox.ts tests/integration.ts ./keeper-vault "$$FIXTURE"
+
+.PHONY: preview test-recovery
+preview: build
+	node development/sandbox.ts development/preview.ts ./keeper-vault "$$FIXTURE"
+
+test-recovery: build
+	node development/sandbox.ts tests/recovery.ts ./keeper-vault "$$CHECKPOINT"
 
 node_modules/.keeper-deps: package.json pnpm-lock.yaml
 	$(PNPM) install --frozen-lockfile
@@ -42,8 +49,9 @@ dist/vault.html dist/window.js &: desktop/window.ts $(wildcard frontend/*) tscon
 	$(PNPM) run build:ui
 
 .PHONY: test-ui
-test-ui: dist/vault.html
-	node tests/buttons.ts
+test-ui: build
+	node development/sandbox.ts tests/buttons.ts
+	node development/sandbox.ts tests/refresh.ts ./keeper-vault
 
 V_TOOL := $(if $(filter $(LOCAL_V),$(V)),$(LOCAL_V))
 .PHONY: fmt fmt-check check

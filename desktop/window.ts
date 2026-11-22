@@ -12,6 +12,7 @@ declare const imports: {
   gi: {
     versions: Record<string, string>;
     GLib: {
+      getenv(name: string): string | null;
       set_prgname(value: string): void;
       set_application_name(value: string): void;
     };
@@ -33,7 +34,9 @@ GLib.set_application_name('Keeper Vault');
 Gtk.init(null);
 
 const appWindow = new Gtk.Window({
-  title: 'Keeper Vault',
+  title: GLib.getenv('KEEPER_PREVIEW')
+    ? 'Keeper Vault · Disposable preview'
+    : 'Keeper Vault',
   default_width: 1024,
   default_height: 760,
   icon_name: 'applications-games',

@@ -85,6 +85,16 @@ h1 {
   margin: 0 0 4px;
   color: #ffdda6;
 }
+.library-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#save-refresh-time {
+  margin: 4px 0 10px;
+}
 .hero p {
   margin: 0;
   max-width: 100%;
@@ -240,10 +250,30 @@ button:disabled {
 .checkpoint-controls {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 6px 12px;
   margin-bottom: 8px;
+}
+.checkpoint-selection {
+  flex: 1 1 17rem;
+  min-width: 0;
+}
+.checkpoint-selection label {
+  width: 100%;
+}
+.checkpoint-selection select {
+  flex: 1;
+}
+.checkpoint-selection p {
+  min-height: 1.35em;
+  margin: 4px 0 0;
+}
+.checkpoint-save + .checkpoint-save {
+  margin-top: 6px;
+}
+.checkpoint-save .detail {
+  font-weight: normal;
 }
 .checkpoint-controls label {
   display: inline-flex;

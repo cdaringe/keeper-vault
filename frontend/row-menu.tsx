@@ -1,7 +1,7 @@
 import { createSignal, Show } from 'solid-js';
 import { notify } from './feedback';
 import { ask } from './dialog';
-import type { Save } from './model';
+import { saveLabel, type Save } from './model';
 const [openId, setOpenId] = createSignal('');
 export function openMenu(id: string) {
   setOpenId(id);
@@ -21,7 +21,7 @@ export function RowMenu(props: { row: Save }) {
   return (
     <>
       <button
-        aria-label={'More actions for ' + props.row.name}
+        aria-label={'More actions for ' + saveLabel(props.row)}
         aria-expanded={openId() === props.row.id ? 'true' : 'false'}
         onClick={() => openMenu(openId() === props.row.id ? '' : props.row.id)}
       >

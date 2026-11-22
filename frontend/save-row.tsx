@@ -5,6 +5,7 @@ import { restoreInstruction } from './restore-policy';
 import { ask } from './dialog';
 import { Action } from './action';
 import { RowMenu, openMenu } from './row-menu';
+import { SaveTime } from './save-time';
 import {
   saveLabel,
   source,
@@ -101,6 +102,11 @@ export function SaveRow(props: {
                 .filter(Boolean)
                 .join(' · ')}
         </div>
+        <Show when={!props.history}>
+          <div class="detail">
+            <SaveTime value={r().source_modified} />
+          </div>
+        </Show>
         <Show when={r().note}>
           <div class="save-note">{r().note}</div>
         </Show>

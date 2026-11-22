@@ -47,7 +47,11 @@ jobs:
           # The Makefile pins the compiler revision and defines its bootstrap.
           key: v-toolchain-ubuntu-24.04-${{ runner.arch }}-${{ hashFiles('Makefile') }}
       - name: Format, compile and test
-        run: make check V=.tools/v/v
+        # Tests must fail closed if the filesystem sandbox is unavailable.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+          make check V=.tools/v/v
       - name: Package the tested Linux binary
         run: |
           tar -czf keeper-vault-linux-x86_64.tar.gz keeper-vault

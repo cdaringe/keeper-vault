@@ -1,6 +1,6 @@
 import { Action } from './action';
 import { ask } from './dialog';
-import type { Command, Save } from './model';
+import { saveLabel, type Command, type Save } from './model';
 export function NoteButton(props: {
   row: Save;
   pending: string;
@@ -11,7 +11,7 @@ export function NoteButton(props: {
     const row = props.row;
     const value = await ask(
       label(),
-      row.checkpoint_scope || row.name,
+      row.checkpoint_scope || saveLabel(row),
       'Save note',
       row.note || '',
     );

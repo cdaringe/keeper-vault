@@ -1,6 +1,6 @@
 import { createMemo, For, Show, flush } from 'solid-js';
 import { HistoryGraph } from './graph';
-import { slot, type Save, type Command } from './model';
+import { saveLabel, slot, type Save, type Command } from './model';
 import { SaveRow } from './save-row';
 export function Library(props: {
   rows: Save[];
@@ -44,6 +44,10 @@ export function Library(props: {
     dest?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     dest?.focus({ preventScroll: true });
   }
+  const historyName = () => {
+    const row = shown().find((save) => save.status === 'Live') || shown()[0];
+    return row ? saveLabel(row) : 'Save';
+  };
   return (
     <section id="list" aria-label="Saves">
       <Show when={!props.history && props.filter === 'Backups'}>
@@ -51,12 +55,7 @@ export function Library(props: {
       </Show>
       <Show when={props.history}>
         <button onClick={() => props.openHistory('')}>← {props.filter}</button>
-        <h2>
-          {shown().find((r) => r.status === 'Live')?.name ||
-            shown()[0]?.name ||
-            'Save'}{' '}
-          · Save history
-        </h2>
+        <h2>{historyName()} · Save history</h2>
       </Show>
       <div class={props.history ? 'timeline' : undefined}>
         <Show when={props.history}>

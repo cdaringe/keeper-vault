@@ -7,6 +7,8 @@ import { readFile } from 'node:fs/promises';
 import { once } from 'node:events';
 import { chromium } from 'playwright-core';
 
+assert.ok(process.env.KEEPER_SANDBOX_ROOT, 'Run browser tests through make.');
+
 const pageSource = await readFile(
   new URL('../dist/vault.html', import.meta.url),
 );
@@ -64,7 +66,7 @@ try {
     );
   };
   await page
-    .getByRole('option', { name: 'Test world', exact: true })
+    .getByRole('option', { name: 'Test world (0)', exact: true })
     .waitFor({ state: 'attached' });
   await tooltip(create, 'Choose a save or Skip in each dropdown.');
   await page.getByLabel('World', { exact: true }).selectOption(world.id);
@@ -88,12 +90,12 @@ try {
   ];
   await page.reload();
   await page
-    .getByRole('option', { name: 'Missy', exact: true })
+    .getByRole('option', { name: 'Missy (1)', exact: true })
     .waitFor({ state: 'attached' });
   await tab('Worlds').click();
   assert.equal(
     await page.locator('#list article .title').first().textContent(),
-    'Zebra',
+    'Zebra (2)',
   );
   assert.ok(await create.isHidden());
   await page.getByRole('button', { name: 'Add note' }).first().click();
@@ -151,6 +153,10 @@ try {
   await page.getByLabel('World', { exact: true }).selectOption(world.id);
   await create.click();
   await tooltip(create, 'Wait for the current save operation to finish.');
+  await tooltip(
+    page.getByRole('button', { name: 'Refresh saves', exact: true }),
+    'Wait for the current save operation to finish.',
+  );
   await tab('Worlds').click();
   await tooltip(
     page.getByRole('button', { name: 'Back up now' }).first(),
@@ -165,23 +171,23 @@ try {
   await tab('Worlds').click();
   const worldRow = page
     .locator('#list article')
-    .filter({ has: page.getByText(world.name, { exact: true }) });
+    .filter({ has: page.getByText('Test world (0)', { exact: true }) });
   await worldRow
-    .getByRole('button', { name: 'Pin ' + world.name, exact: true })
+    .getByRole('button', { name: 'Pin Test world (0)', exact: true })
     .click();
   await worldRow
-    .getByRole('button', { name: 'Unpin ' + world.name, exact: true })
+    .getByRole('button', { name: 'Unpin Test world (0)', exact: true })
     .waitFor();
   assert.equal(
     await page.locator('#list article .title').first().textContent(),
-    world.name,
+    'Test world (0)',
   );
   await worldRow.click({ button: 'right' });
   await worldRow.getByRole('button', { name: 'Show path' }).waitFor();
   await page.keyboard.press('Escape');
   await worldRow.getByRole('button', { name: 'View history' }).click();
   await page
-    .getByRole('heading', { name: world.name + ' · Save history' })
+    .getByRole('heading', { name: 'Test world (0) · Save history' })
     .waitFor();
   await page.locator('.timeline svg circle').nth(1).waitFor();
   await page.getByRole('button', { name: '← Worlds' }).click();
@@ -190,7 +196,7 @@ try {
   const firstId = () => table.locator('tbody tr').first().getAttribute('id');
   assert.equal(await firstId(), 'point-checkpoint-test');
   for (const [label, first, reversed] of [
-    ['Created', 'older', 'checkpoint-test'],
+    ['Captured', 'older', 'checkpoint-test'],
     ['Included saves', 'older', 'checkpoint-test'],
     ['Note', 'checkpoint-test', 'older'],
   ]) {

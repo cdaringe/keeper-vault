@@ -14,6 +14,7 @@ import {
 } from './restore-policy';
 import { api, RunningGameError } from './api';
 import { Library } from './library';
+import { Action } from './action';
 
 function App() {
   const [saves, setSaves] = createSignal<Save[]>([]);
@@ -22,6 +23,8 @@ function App() {
   const [checkpointStatus, setCheckpointStatus] = createSignal('');
   const [filter, setFilter] = createSignal('Checkpoints');
   const [history, setHistory] = createSignal('');
+  const [lastRefreshed, setLastRefreshed] = createSignal<Date | null>(null);
+  const [refreshFailed, setRefreshFailed] = createSignal(false);
   function select(name: string) {
     openMenu('');
     setHistory('');
@@ -48,7 +51,11 @@ function App() {
       }
       cmd = { ...cmd, dangerous_mode: dangerousMode() };
     }
-    setPending('Wait for the current save operation to finish.');
+    setPending(
+      cmd
+        ? 'Wait for the current save operation to finish.'
+        : 'Refreshing saves from disk. Wait for it to finish.',
+    );
     const paired = [
       'checkpoint',
       'restore_checkpoint',
@@ -76,6 +83,8 @@ function App() {
       const profile = res.headers.get('X-Profile-Path');
       setProfilePath(profile ? decodeURIComponent(profile) : '');
       setSaves(await res.json());
+      setLastRefreshed(new Date());
+      setRefreshFailed(false);
       flush();
       report(
         cmd
@@ -97,7 +106,7 @@ function App() {
               note: cmd.value?.trim() ? 'Note saved.' : 'Note removed.',
               pin: 'Pin updated.',
             }[cmd.op]
-          : '',
+          : 'Saves refreshed from disk.',
       );
       if (cmd?.op === 'checkpoint') {
         const card = document.getElementById(
@@ -112,14 +121,22 @@ function App() {
         notify('Backup created for ' + saveLabel(backed) + '. ', true);
       }
     } catch (e) {
+      if (!cmd) setRefreshFailed(true);
       if (e instanceof RunningGameError) {
         observeGame('running');
         revealSwitch();
       }
-      report(
-        controller.signal.aborted
+      const error = controller.signal.aborted
+        ? cmd
           ? 'The app took too long to respond. You can retry creating a checkpoint safely.'
-          : e.message,
+          : 'Refreshing saves took too long. Try again.'
+        : e.message;
+      report(
+        cmd
+          ? error
+          : 'Could not refresh saves: ' +
+              error +
+              ' Displayed save times may be out of date.',
       );
     } finally {
       clearTimeout(timeout);
@@ -139,9 +156,35 @@ function App() {
         </div>
       </header>
       <main>
-        <h1>Save library</h1>
+        <div class="library-heading">
+          <h1>Save library</h1>
+          <Action
+            label="Refresh saves"
+            secondary
+            pending={pending()}
+            click={() => request()}
+          />
+        </div>
         <p id="profilePath">
           {profilePath() && 'Open profile · ' + profilePath()}
+        </p>
+        <p class="detail" id="save-refresh-time">
+          <Show
+            when={lastRefreshed()}
+            fallback="Saves have not been loaded yet."
+          >
+            {(checked) => (
+              <>
+                Last refreshed:{' '}
+                <time datetime={checked().toISOString()}>
+                  {checked().toLocaleString(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'long',
+                  })}
+                </time>
+              </>
+            )}
+          </Show>
         </p>
         <nav aria-label="Filter saves">
           <For each={['Checkpoints', 'Worlds', 'Characters', 'Backups']}>
@@ -179,12 +222,14 @@ function App() {
           <p class="detail">
             A checkpoint is a restore point for a world, a character, or both.
             Include both to back them up or restore them together in one action.
-            Save and quit before creating one.
+            Save and quit in Core Keeper, then refresh saves before creating
+            one. Refresh reads files already saved on disk.
           </p>
           <div id="checkpoints">
             <Checkpoints
               rows={saves()}
               pending={pending()}
+              refreshFailed={refreshFailed()}
               request={request}
               ask={ask}
             />

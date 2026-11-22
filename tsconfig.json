@@ -14,5 +14,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["frontend/*.ts", "frontend/*.tsx", "tests/*.ts", "desktop/*.ts"]
+  "include": [
+    "frontend/*.ts",
+    "frontend/*.tsx",
+    "tests/*.ts",
+    "desktop/*.ts",
+    "development/*.ts"
+  ]
 }
