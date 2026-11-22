@@ -6,8 +6,12 @@ LOCAL_V := .tools/v/v
 PNPM ?= $(if $(shell command -v pnpm),pnpm,corepack pnpm)
 V ?= $(or $(shell command -v v 2>/dev/null),$(LOCAL_V))
 
-.PHONY: build run test
+.PHONY: build clean run test
 build: keeper-vault
+
+clean:
+	$(RM) keeper-vault keeper-vault.new
+	$(RM) -r dist
 
 keeper-vault: $(V_SOURCES) backend/v.mod dist/vault.html dist/window.js Makefile $(if $(filter $(LOCAL_V),$(V)),$(LOCAL_V))
 	"$(V)" -o keeper-vault.new backend
