@@ -20,6 +20,8 @@ $(LOCAL_V):
 	$(MAKE) -C .tools/v
 	test -x $@
 
+BROWSER ?= $(shell for browser in chromium google-chrome brave-browser chromium-browser; do command -v $$browser && break; done)
+
 export PROFILE FIXTURE BROWSER
 run: build
 	./keeper-vault $${PROFILE:+"$$PROFILE"}
@@ -31,7 +33,7 @@ node_modules/.keeper-deps: package.json package-lock.json
 	npm ci --no-audit --no-fund
 	touch $@
 
-dist/vault.html dist/window.js &: desktop/window.ts $(wildcard ui/*) tsconfig.json node_modules/.keeper-deps
+dist/vault.html dist/window.js &: desktop/window.ts $(wildcard frontend/*) tsconfig.json node_modules/.keeper-deps
 	npm run build:ui
 
 .PHONY: test-ui

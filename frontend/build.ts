@@ -1,17 +1,28 @@
 import { build } from 'esbuild';
-import { solidPlugin } from 'esbuild-plugin-solid';
+import { transform } from '@solidjs/compiler';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 const { outputFiles } = await build({
-  entryPoints: ['ui/app.tsx'],
+  entryPoints: ['frontend/app.tsx'],
   bundle: true,
   write: false,
   format: 'iife',
   target: 'es2022',
-  plugins: [solidPlugin()],
+  plugins: [
+    {
+      name: 'solid-tsx',
+      setup(build) {
+        build.onLoad({ filter: /\.tsx$/ }, async ({ path }) => ({
+          contents: transform(await readFile(path, 'utf8'), { filename: path })
+            .code,
+          loader: 'ts',
+        }));
+      },
+    },
+  ],
 });
-const css = await readFile('ui/styles.css', 'utf8');
-const template = (await readFile('ui/vault.html', 'utf8')).replace(
+const css = await readFile('frontend/styles.css', 'utf8');
+const template = (await readFile('frontend/vault.html', 'utf8')).replace(
   '<!-- styles -->',
   () => '<style>' + css + '</style>',
 );

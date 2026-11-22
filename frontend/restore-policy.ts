@@ -1,4 +1,4 @@
-import { batch, createSignal } from 'solid-js';
+import { flush, createSignal } from 'solid-js';
 
 type GameState = 'unknown' | 'running' | 'stopped';
 export const [gameState, setState] = createSignal<GameState>('unknown');
@@ -6,13 +6,11 @@ export const [dangerousMode, setDangerousMode] = createSignal(false);
 export const [switchVisible, setSwitchVisible] = createSignal(false);
 
 export function observeGame(state: GameState) {
-  batch(() => {
-    setState(state);
-    if (state !== 'running') {
-      setSwitchVisible(false);
-      setDangerousMode(false);
-    }
-  });
+  setState(state);
+  if (state !== 'running') {
+    setSwitchVisible(false);
+    setDangerousMode(false);
+  }
 }
 
 export function restoreBlocked() {
@@ -22,6 +20,7 @@ export function restoreBlocked() {
 export function revealSwitch() {
   if (!restoreBlocked()) return;
   setSwitchVisible(true);
+  flush();
   document.getElementById('dangerous-mode')?.focus();
 }
 

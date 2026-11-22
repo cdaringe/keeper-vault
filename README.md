@@ -16,4 +16,4 @@ Make fetches V if needed. To select a save profile, use `make run PROFILE="/path
 
 ## Develop
 
-V backend in `backend/`, Solid UI in `ui/`. Run `make fmt` to format and `make check BROWSER=/path/to/chromium` to build and test.
+V backend in `backend/`, Solid frontend in `frontend/`. Run `make fmt` to format and `make check` to build and test. Browser tests detect Chromium, Chrome, or Brave on your PATH, or use Playwright’s installed browser. Set `BROWSER=/path/to/chromium` to override.

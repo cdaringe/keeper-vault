@@ -1,4 +1,4 @@
-import { Action } from './checkpoint-action';
+import { Action } from './action';
 import { type Save, type Command, when } from './model';
 
 export function CheckpointTrash(props: {

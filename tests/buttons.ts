@@ -105,6 +105,11 @@ try {
   const pending = Promise.withResolvers<void>();
   await page.route('**/action', async (route) => {
     await pending.promise;
+    const cmd = route.request().postDataJSON();
+    if (cmd.op === 'pin')
+      saves = saves.map((row) =>
+        row.id === cmd.id ? { ...row, pinned: !row.pinned } : row,
+      );
     await route.fulfill({
       json: [
         ...saves,
@@ -157,6 +162,30 @@ try {
   assert.ok(
     await page.getByText('Older checkpoint', { exact: true }).isVisible(),
   );
+  await tab('Worlds').click();
+  const worldRow = page
+    .locator('#list article')
+    .filter({ has: page.getByText(world.name, { exact: true }) });
+  await worldRow
+    .getByRole('button', { name: 'Pin ' + world.name, exact: true })
+    .click();
+  await worldRow
+    .getByRole('button', { name: 'Unpin ' + world.name, exact: true })
+    .waitFor();
+  assert.equal(
+    await page.locator('#list article .title').first().textContent(),
+    world.name,
+  );
+  await worldRow.click({ button: 'right' });
+  await worldRow.getByRole('button', { name: 'Show path' }).waitFor();
+  await page.keyboard.press('Escape');
+  await worldRow.getByRole('button', { name: 'View history' }).click();
+  await page
+    .getByRole('heading', { name: world.name + ' · Save history' })
+    .waitFor();
+  await page.locator('.timeline svg circle').nth(1).waitFor();
+  await page.getByRole('button', { name: '← Worlds' }).click();
+  await tab('Checkpoints').click();
   const table = page.getByRole('table', { name: 'Checkpoints' });
   const firstId = () => table.locator('tbody tr').first().getAttribute('id');
   assert.equal(await firstId(), 'point-checkpoint-test');

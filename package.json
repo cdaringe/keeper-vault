@@ -3,15 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:ui": "tsc --noEmit && node ui/build.ts"
+    "build:ui": "tsc --noEmit && node frontend/build.ts"
   },
   "dependencies": {
-    "solid-js": "^1.9.0"
+    "@solidjs/web": "2.0.3",
+    "solid-js": "2.0.3"
   },
   "devDependencies": {
+    "@solidjs/compiler": "2.0.2",
     "@types/node": "^22.20.5",
     "esbuild": "^0.25.0",
-    "esbuild-plugin-solid": "^0.6.0",
     "json5": "2.2.3",
     "playwright-core": "^1.65.1",
     "prettier": "3.10.1",

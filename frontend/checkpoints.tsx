@@ -1,7 +1,7 @@
-import { noteButton } from './note';
+import { NoteButton } from './note';
 import { restoreInstruction } from './restore-policy';
 import { createMemo, createSignal, For, Show } from 'solid-js';
-import { Action } from './checkpoint-action';
+import { Action } from './action';
 import { CheckpointTrash } from './checkpoint-trash';
 import { saveLabel, when, type Command, type Save } from './model';
 
@@ -106,7 +106,7 @@ export function Checkpoints(props: Props) {
       }
     }
     return (
-      <tr id={'point-' + point.id} tabIndex={-1}>
+      <tr id={'point-' + point.id} tabindex={-1}>
         <th scope="row">
           <span>{point.checkpoint_scope || point.name}</span>
           <Show when={latest() && !deletedOnly()}>
@@ -116,7 +116,13 @@ export function Checkpoints(props: Props) {
         <td>{when(point)}</td>
         <td>
           <div class="save-note">{point.note}</div>
-          <Show when={!deletedOnly()}>{noteButton(point, props.request)}</Show>
+          <Show when={!deletedOnly()}>
+            <NoteButton
+              row={point}
+              request={props.request}
+              pending={props.pending}
+            />
+          </Show>
         </td>
         <td>
           <div class="table-actions">
@@ -244,7 +250,7 @@ export function Checkpoints(props: Props) {
             each={sortedPoints()}
             fallback={
               <tr>
-                <td colSpan={3}>
+                <td colspan={3}>
                   {deletedOnly()
                     ? 'No recently deleted checkpoints.'
                     : 'No checkpoints yet.'}

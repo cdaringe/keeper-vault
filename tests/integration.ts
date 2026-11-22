@@ -1,7 +1,7 @@
 import JSON5 from 'json5';
 import { createFixture } from './fixture.ts';
 import type { AddressInfo } from 'node:net';
-import type { Save } from '../ui/model';
+import type { Save } from '../frontend/model';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';

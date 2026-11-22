@@ -18,7 +18,7 @@ jobs:
           node-version: 24
           cache: npm
       - name: Format, compile and test
-        run: make check V=.tools/v/v BROWSER="$(command -v google-chrome)"
+        run: make check V=.tools/v/v
       - name: Package the tested Linux binary
         run: |
           tar -czf keeper-vault-linux-x86_64.tar.gz keeper-vault

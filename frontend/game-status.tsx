@@ -1,4 +1,4 @@
-import { Show } from 'solid-js';
+import { Show, onCleanup } from 'solid-js';
 import { api } from './api';
 import {
   gameState,
@@ -9,6 +9,27 @@ import {
 } from './restore-policy';
 
 export function GameStatus() {
+  const lifetime = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  async function refresh() {
+    try {
+      const response = await api(
+        '/game-status',
+        AbortSignal.any([lifetime.signal, AbortSignal.timeout(5000)]),
+      );
+      const running = await response.json();
+      if (!lifetime.signal.aborted)
+        observeGame(running ? 'running' : 'stopped');
+    } catch {
+      if (!lifetime.signal.aborted) observeGame('unknown');
+    }
+    if (!lifetime.signal.aborted) timer = setTimeout(refresh, 5000);
+  }
+  refresh();
+  onCleanup(() => {
+    lifetime.abort();
+    clearTimeout(timer);
+  });
   return (
     <>
       <span id="game-status" role="status" data-state={gameState()}>
@@ -34,14 +55,4 @@ export function GameStatus() {
       </Show>
     </>
   );
-}
-
-export async function refreshGameStatus() {
-  try {
-    const response = await api('/game-status', AbortSignal.timeout(5000));
-    observeGame((await response.json()) ? 'running' : 'stopped');
-  } catch {
-    observeGame('unknown');
-  }
-  setTimeout(refreshGameStatus, 5000);
 }
