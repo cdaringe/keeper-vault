@@ -3,6 +3,7 @@
 V_SOURCES := $(shell find backend -name '*.v' -print)
 V_REV := 9621aa02fd7d7788700846e93242d08bd70a8aea
 LOCAL_V := .tools/v/v
+PNPM ?= $(if $(shell command -v pnpm),pnpm,corepack pnpm)
 V ?= $(or $(shell command -v v 2>/dev/null),$(LOCAL_V))
 
 .PHONY: build run test
@@ -29,12 +30,12 @@ run: build
 test: build
 	node tests/integration.ts ./keeper-vault "$$FIXTURE"
 
-node_modules/.keeper-deps: package.json package-lock.json
-	npm ci --no-audit --no-fund
+node_modules/.keeper-deps: package.json pnpm-lock.yaml
+	$(PNPM) install --frozen-lockfile
 	touch $@
 
 dist/vault.html dist/window.js &: desktop/window.ts $(wildcard frontend/*) tsconfig.json node_modules/.keeper-deps
-	npm run build:ui
+	$(PNPM) run build:ui
 
 .PHONY: test-ui
 test-ui: dist/vault.html
@@ -44,11 +45,11 @@ V_TOOL := $(if $(filter $(LOCAL_V),$(V)),$(LOCAL_V))
 .PHONY: fmt fmt-check check
 fmt: node_modules/.keeper-deps $(V_TOOL)
 	"$(V)" fmt -w $(V_SOURCES)
-	node_modules/.bin/prettier --write .
+	node_modules/.bin/biome format --write .
 
 fmt-check: node_modules/.keeper-deps $(V_TOOL)
 	"$(V)" fmt -verify $(V_SOURCES)
-	node_modules/.bin/prettier --check .
+	node_modules/.bin/biome format .
 
 check: fmt-check build
 	"$(V)" -W -check backend

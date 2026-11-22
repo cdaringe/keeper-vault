@@ -6,7 +6,7 @@ A Linux desktop save manager for Core Keeper. Checkpoint a world, a character, o
 
 ## Run
 
-With Node.js 22.18+, npm, GNU Make, Git, a C compiler, GJS, GTK 3, and WebKitGTK 4.1 installed:
+With Node.js 22.18+, pnpm (or Corepack), GNU Make, Git, a C compiler, GJS, GTK 3, and WebKitGTK 4.1 installed:
 
 ```sh
 make run
