@@ -1,0 +1,7 @@
+.tools/
+dist/
+node_modules/
+keeper-vault
+keeper-vault.new
+AGENTS.md
+package-lock.json

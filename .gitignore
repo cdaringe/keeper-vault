@@ -1,2 +1,7 @@
 /keeper-vault
-__pycache__/
+
+/.tools/
+/keeper-vault.new
+
+/node_modules/
+/dist/
