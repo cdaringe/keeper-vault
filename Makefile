@@ -1,5 +1,25 @@
 .DEFAULT_GOAL := build
 
+# GNU Make treats the word after -- as another goal.
+ifneq ($(filter version,$(MAKECMDGOALS)),)
+ifneq ($(words $(MAKECMDGOALS)),2)
+$(error Usage: make version -- patch|minor|major)
+endif
+ifneq ($(words $(filter patch minor major,$(MAKECMDGOALS))),1)
+$(error Usage: make version -- patch|minor|major)
+endif
+.PHONY: patch minor major
+patch minor major:
+	@:
+endif
+
+.PHONY: version test-version
+version:
+	node development/version.ts $(filter patch minor major,$(MAKECMDGOALS))
+
+test-version:
+	node development/sandbox.ts tests/version.ts
+
 V_SOURCES := $(shell find backend -name '*.v' -print)
 V_REV := 9621aa02fd7d7788700846e93242d08bd70a8aea
 LOCAL_V := .tools/v/v
@@ -68,3 +88,4 @@ check: fmt-check build
 	node_modules/.bin/tsc --noEmit
 	$(MAKE) test
 	$(MAKE) test-ui
+	$(MAKE) test-version
