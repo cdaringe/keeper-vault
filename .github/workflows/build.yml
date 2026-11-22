@@ -40,6 +40,12 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - name: Cache the V toolchain
+        uses: actions/cache@v5
+        with:
+          path: .tools/v
+          # The Makefile pins the compiler revision and defines its bootstrap.
+          key: v-toolchain-ubuntu-24.04-${{ runner.arch }}-${{ hashFiles('Makefile') }}
       - name: Format, compile and test
         run: make check V=.tools/v/v
       - name: Package the tested Linux binary
