@@ -46,12 +46,14 @@ jobs:
           path: .tools/v
           # The Makefile pins the compiler revision and defines its bootstrap.
           key: v-toolchain-ubuntu-24.04-${{ runner.arch }}-${{ hashFiles('Makefile') }}
-      - name: Format, compile and test
-        # Tests must fail closed if the filesystem sandbox is unavailable.
+      - name: Set up the test sandbox
         run: |
           sudo apt-get update
-          sudo apt-get install -y bubblewrap
-          make check V=.tools/v/v
+          sudo apt-get install -y bubblewrap apparmor-profiles
+          # Ubuntu 24.04 restricts the user namespace capabilities needed for loopback.
+          sudo apparmor_parser -r /usr/share/apparmor/extra-profiles/bwrap-userns-restrict
+      - name: Format, compile and test
+        run: make check V=.tools/v/v
       - name: Package the tested Linux binary
         run: |
           tar -czf keeper-vault-linux-x86_64.tar.gz keeper-vault
