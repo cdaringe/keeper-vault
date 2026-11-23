@@ -15,7 +15,7 @@ jobs:
       build: ${{ steps.route.outputs.build }}
     steps:
       - if: github.event_name == 'push' && github.ref_type == 'branch'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: route
@@ -34,14 +34,14 @@ jobs:
     if: needs.route.outputs.build == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
       - name: Cache the V toolchain
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .tools/v
           # The Makefile pins the compiler revision and defines its bootstrap.
@@ -58,7 +58,7 @@ jobs:
         run: |
           tar -czf keeper-vault-linux-x86_64.tar.gz keeper-vault
           sha256sum keeper-vault-linux-x86_64.tar.gz > keeper-vault-linux-x86_64.tar.gz.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-x86_64
           path: |
@@ -73,7 +73,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: linux-x86_64
       - name: Publish tagged release
