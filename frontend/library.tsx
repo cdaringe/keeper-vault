@@ -1,6 +1,6 @@
 import { createMemo, For, Show, flush } from 'solid-js';
 import { HistoryGraph } from './graph';
-import { saveLabel, slot, type Save, type Command } from './model';
+import { SaveKind, saveLabel, slot, type Save, type Command } from './model';
 import { SaveRow } from './save-row';
 export function Library(props: {
   rows: Save[];
@@ -19,7 +19,7 @@ export function Library(props: {
     return rows
       .filter(
         (r) =>
-          r.kind !== 'Checkpoint' &&
+          r.kind !== SaveKind.Checkpoint &&
           (props.history
             ? slot(r) === props.history
             : props.filter === 'Backups'
@@ -36,7 +36,7 @@ export function Library(props: {
       );
   });
   function showTarget(row: Save) {
-    if (row.kind === 'Checkpoint') {
+    if (row.kind === SaveKind.Checkpoint) {
       props.select('Checkpoints');
       flush();
     }

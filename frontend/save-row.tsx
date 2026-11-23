@@ -7,6 +7,7 @@ import { Action } from './action';
 import { RowMenu, openMenu } from './row-menu';
 import { SaveTime } from './save-time';
 import {
+  SaveKind,
   saveLabel,
   source,
   when,
@@ -74,7 +75,7 @@ export function SaveRow(props: {
         openMenu(r().id);
       }}
     >
-      <span class="icon">{r().kind === 'World' ? '◆' : '♟'}</span>
+      <span class="icon">{r().kind === SaveKind.World ? '◆' : '♟'}</span>
       <div class="info">
         <Show when={!props.history && r().matches_active}>
           <strong class="slot-label">Matches current save</strong>

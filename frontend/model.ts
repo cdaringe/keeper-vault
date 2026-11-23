@@ -1,5 +1,13 @@
+export enum SaveKind {
+  World = 'World',
+  Character = 'Character',
+  Checkpoint = 'Checkpoint',
+}
+
+export type SlotKind = SaveKind.World | SaveKind.Character;
+
 export interface CheckpointSave {
-  kind: string;
+  kind: SlotKind;
   slot: string;
   name: string;
   source_modified?: string;
@@ -9,7 +17,7 @@ export interface Save {
   id: string;
   name: string;
   note: string;
-  kind: string;
+  kind: SaveKind;
   slot: string;
   path: string;
   created: string;
@@ -18,7 +26,6 @@ export interface Save {
   captured?: string;
   source_modified?: string;
   world_created?: string;
-  record_modified?: string;
   pinned: boolean;
   status: string;
   restore_target: string;
@@ -60,7 +67,7 @@ export function source(r: Save) {
   );
 }
 export function saveLabel(r: Pick<Save, 'kind' | 'name' | 'slot'>) {
-  return r.kind === 'Checkpoint' ? r.name : `${r.name} (${r.slot})`;
+  return r.kind === SaveKind.Checkpoint ? r.name : `${r.name} (${r.slot})`;
 }
 export function slot(r: Save) {
   return r.kind + '-' + r.slot;

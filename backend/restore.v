@@ -22,7 +22,7 @@ fn (s Store) activate(library string, members []Row) ! {
 		for rel in current { if file_ok(tmp, rel)! { occupied = true } }
 		if occupied {
 			target := if library == s.library { row.id } else { os.file_name(library) }
-			s.snapshot_for_restore(tmp, row.kind, row.slot, 'Backup', target)!
+			s.snapshot_for_restore(tmp, row.kind, row.slot, .restore_backup, target)!
 		}
 		for rel in current {
 			if file_ok(tmp, rel)! { os.rm(os.join_path(tmp, rel))! }

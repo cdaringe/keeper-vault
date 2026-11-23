@@ -4,12 +4,12 @@ import os
 import json2
 import layout
 
-fn display_name(root string, kind string, slot string) string {
+fn display_name(root string, kind layout.SaveKind, slot string) string {
 	path := layout.metadata_save(kind, slot)
-	raw := os.read_file(os.join_path(root, path)) or { return 'Unnamed ${kind.to_lower()}' }
+	raw := os.read_file(os.join_path(root, path)) or { return 'Unnamed ${kind.str()}' }
 	// Unity saves may contain an unquoted Infinity in a timer field.
-	doc := json2.decode[json2.Any](raw, json5: true) or { return 'Unnamed ${kind.to_lower()}' }
-	if kind == 'World' { return doc.as_map()['name'] or { return 'Unnamed world' }.str() }
+	doc := json2.decode[json2.Any](raw, json5: true) or { return 'Unnamed ${kind.str()}' }
+	if kind == .world { return doc.as_map()['name'] or { return 'Unnamed world' }.str() }
 	for field in ['characterCustomizationNew', 'characterCustomization'] {
 		custom := doc.as_map()[field] or { continue }
 		name := custom.as_map()['name'] or { continue }
@@ -25,5 +25,5 @@ fn display_name(root string, kind string, slot string) string {
 		}
 		if bytes.len > 0 { return bytes.bytestr() }
 	}
-	return 'Unnamed ${kind.to_lower()}'
+	return 'Unnamed ${kind.str()}'
 }

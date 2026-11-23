@@ -6,7 +6,7 @@ import json2
 import time
 import crypto.sha256
 
-fn slot_hashes(root string, kind string, slot string) !map[string]string {
+fn slot_hashes(root string, kind layout.SaveKind, slot string) !map[string]string {
 	mut hashes := map[string]string{}
 	for rel in layout.save_files(root, kind, slot)! {
 		if file_ok(root, rel)! {
@@ -26,7 +26,7 @@ fn file_ok(root string, rel string) !bool {
 	return true
 }
 
-fn (s Store) snapshot(root string, kind string, slot string, status string) ! {
+fn (s Store) snapshot(root string, kind layout.SaveKind, slot string, status SaveStatus) ! {
 	s.snapshot_for_restore(root, kind, slot, status, '')!
 }
 
@@ -35,12 +35,12 @@ struct SnapshotSource {
 	original_modified ?string
 }
 
-fn (s Store) snapshot_for_restore(root string, kind string, slot string, status string, restore_target string, source_info SnapshotSource) ! {
+fn (s Store) snapshot_for_restore(root string, kind layout.SaveKind, slot string, status SaveStatus, restore_target string, source_info SnapshotSource) ! {
 	tmp := layout.staging(s.library)
 	os.mkdir(tmp)!
 	defer { if os.is_dir(tmp) { os.rmdir_all(tmp) or {} } }
 	mut hashes := map[string]string{}
-	previous := status == 'Game backup'
+	previous := status == .game_backup
 	captured := time.now().format_ss_milli()
 	mut created := captured
 	mut target := layout.snapshot_id()
@@ -72,7 +72,7 @@ fn (s Store) snapshot_for_restore(root string, kind string, slot string, status 
 	if previous {
 		mut keys := hashes.keys()
 		keys.sort()
-		mut identity := [kind, slot, created]
+		mut identity := [kind.label(), slot, created]
 		for key in keys {
 			identity << key
 			identity << hashes[key]

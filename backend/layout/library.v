@@ -6,11 +6,9 @@ import rand
 
 const snapshot_prefix = 'save-'
 const checkpoint_prefix = 'checkpoint-'
-// Existing libraries may contain checkpoints written under the original name.
-const old_checkpoint_prefix = 'boss-'
 
 pub fn is_checkpoint(id string) bool {
-	return id.starts_with(checkpoint_prefix) || id.starts_with(old_checkpoint_prefix)
+	return id.starts_with(checkpoint_prefix)
 }
 
 pub fn is_snapshot(id string) bool { return id.starts_with(snapshot_prefix) }

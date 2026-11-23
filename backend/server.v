@@ -5,6 +5,28 @@ import net.urllib
 import sync
 import json2
 
+enum Operation {
+	unknown
+	checkpoint
+	note
+	recover_checkpoint
+	purge_checkpoint
+	trash_checkpoint
+	restore_checkpoint
+	pin
+	history
+	backup
+	copy
+	activate
+}
+
+struct Command {
+	dangerous_mode bool
+	op             string
+	id             string
+	value          string
+}
+
 struct App {
 	store_lock &sync.Mutex = sync.new_mutex()
 	store      Store
@@ -40,13 +62,14 @@ fn (mut a App) handle(req http.Request) http.Response {
 	mut capture := CaptureResult{}
 	if req.url == '/action' && req.method == .post {
 		c := json2.decode[Command](req.data) or { return reply('Invalid command', 'text/plain', .bad_request) }
-		if c.op in ['activate', 'restore_checkpoint', 'retry'] && !c.dangerous_mode {
+		op := Operation.from(c.op) or { Operation.unknown }
+		if op in [.activate, .restore_checkpoint] && !c.dangerous_mode {
 			running := game_running() or { return reply('Unable to check if Core Keeper is running. Try again.', 'text/plain', .service_unavailable) }
 			if running {
 				return reply('Restore blocked. Quit Core Keeper or turn on Dangerous mode.', 'text/plain', .locked)
 			}
 		}
-		capture = a.store.apply(c) or { return reply(err.msg(), 'text/plain', .conflict) }
+		capture = a.store.apply(op, c.id, c.value) or { return reply(err.msg(), 'text/plain', .conflict) }
 	} else if req.url != '/saves' || req.method != .get {
 		return reply('Unknown route', 'text/plain', .not_found)
 	}

@@ -3,7 +3,14 @@ import { restoreInstruction } from './restore-policy';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { Action } from './action';
 import { CheckpointTrash } from './checkpoint-trash';
-import { saveLabel, when, type Command, type Save } from './model';
+import {
+  SaveKind,
+  saveLabel,
+  when,
+  type Command,
+  type Save,
+  type SlotKind,
+} from './model';
 import { SaveTime } from './save-time';
 
 interface Props {
@@ -20,16 +27,19 @@ interface Props {
 
 export function Checkpoints(props: Props) {
   const [deletedOnly, setDeletedOnly] = createSignal(false);
-  const [world, setWorld] = createSignal('');
-  const [character, setCharacter] = createSignal('');
-  const live = (kind: string) =>
-    props.rows.filter((r) => r.kind === kind && r.status === 'Live');
-  const selected = (kind: string, id: string) => {
-    const choices = live(kind);
-    return choices.find((row) => row.id === id)?.id || '';
-  };
-  const worldId = () => selected('World', world());
-  const characterId = () => selected('Character', character());
+  function saveSelection(kind: SlotKind) {
+    const [value, setValue] = createSignal('');
+    const options = createMemo(() =>
+      props.rows.filter((row) => row.kind === kind && row.status === 'Live'),
+    );
+    const selected = createMemo(() =>
+      options().find((row) => row.id === value()),
+    );
+    const skipped = () => value() === 'skip';
+    return { kind, options, selected, skipped, setValue };
+  }
+  const world = saveSelection(SaveKind.World);
+  const character = saveSelection(SaveKind.Character);
   const points = createMemo(() =>
     props.rows
       .filter((r) => r.status === (deletedOnly() ? 'Trashed' : 'Checkpoint'))
@@ -81,13 +91,15 @@ export function Checkpoints(props: Props) {
     );
   }
   const missing = () => {
-    const needsWorld = !worldId() && world() !== 'skip';
-    const needsCharacter = !characterId() && character() !== 'skip';
+    const needsWorld = !world.selected() && !world.skipped();
+    const needsCharacter = !character.selected() && !character.skipped();
     if (needsWorld && needsCharacter)
       return 'Choose a save or Skip in each dropdown.';
     if (needsWorld) return 'Choose a world or Skip world.';
     if (needsCharacter) return 'Choose a character or Skip character.';
-    return worldId() || characterId() ? '' : 'Include at least one save.';
+    return world.selected() || character.selected()
+      ? ''
+      : 'Include at least one save.';
   };
 
   function tableRow(point: Save, latest: () => boolean) {
@@ -181,47 +193,31 @@ export function Checkpoints(props: Props) {
     <>
       <Show when={!deletedOnly()}>
         <div class="checkpoint-controls">
-          <For each={['World', 'Character']}>
-            {(kind) => (
+          <For each={[world, character]}>
+            {(choice) => (
               <div class="checkpoint-selection">
                 <label>
-                  {kind}
+                  {choice.kind}
                   <select
-                    aria-label={kind}
-                    aria-describedby={kind.toLowerCase() + '-save-time'}
-                    onChange={(e) =>
-                      (kind === 'World' ? setWorld : setCharacter)(
-                        e.currentTarget.value,
-                      )
-                    }
+                    aria-label={choice.kind}
+                    aria-describedby={choice.kind.toLowerCase() + '-save-time'}
+                    onChange={(e) => choice.setValue(e.currentTarget.value)}
                   >
                     <option
                       value=""
                       disabled
-                      selected={
-                        kind === 'World'
-                          ? !worldId() && world() !== 'skip'
-                          : !characterId() && character() !== 'skip'
-                      }
+                      selected={!choice.selected() && !choice.skipped()}
                     >
-                      Choose {kind.toLowerCase()}…
+                      Choose {choice.kind.toLowerCase()}…
                     </option>
-                    <option
-                      value="skip"
-                      selected={
-                        (kind === 'World' ? world() : character()) === 'skip'
-                      }
-                    >
-                      Skip {kind.toLowerCase()}
+                    <option value="skip" selected={choice.skipped()}>
+                      Skip {choice.kind.toLowerCase()}
                     </option>
-                    <For each={live(kind)}>
+                    <For each={choice.options()}>
                       {(r) => (
                         <option
                           value={r.id}
-                          selected={
-                            r.id ===
-                            (kind === 'World' ? worldId() : characterId())
-                          }
+                          selected={r.id === choice.selected()?.id}
                         >
                           {saveLabel(r)}
                         </option>
@@ -231,16 +227,10 @@ export function Checkpoints(props: Props) {
                 </label>
                 <p
                   class="detail"
-                  id={kind.toLowerCase() + '-save-time'}
+                  id={choice.kind.toLowerCase() + '-save-time'}
                   aria-live="polite"
                 >
-                  <Show
-                    when={live(kind).find(
-                      (row) =>
-                        row.id ===
-                        (kind === 'World' ? worldId() : characterId()),
-                    )}
-                  >
+                  <Show when={choice.selected()}>
                     {(save) => <SaveTime value={save().source_modified} />}
                   </Show>
                 </p>
@@ -258,8 +248,8 @@ export function Checkpoints(props: Props) {
             click={() =>
               props.request({
                 op: 'checkpoint',
-                id: worldId(),
-                value: characterId(),
+                id: world.selected()?.id || '',
+                value: character.selected()?.id || '',
               })
             }
           />

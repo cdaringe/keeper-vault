@@ -15,8 +15,8 @@ struct WorldDates {
 	creation_date WorldCalendarDate @[json: 'creationDate']
 }
 
-fn world_creation_date(root string, kind string, slot string) string {
-	if kind != 'World' { return '' }
+fn world_creation_date(root string, kind layout.SaveKind, slot string) string {
+	if kind != .world { return '' }
 	raw := os.read_file(os.join_path(root, layout.metadata_save(kind, slot))) or { return '' }
 	metadata := json2.decode[WorldDates](raw, json5: true) or { return '' }
 	date := metadata.creation_date

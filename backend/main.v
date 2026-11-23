@@ -43,8 +43,8 @@ fn main() {
 	addr := listener.addr() or { panic(err) }.str()
 	store := Store{ profile: profile, library: library }
 	for row in store.rows() or { panic(err) } {
-		if row.status == 'Live' {
-			store.snapshot(profile, row.kind, row.slot, 'Game backup') or { eprintln('Previous save unavailable for ' + row.name + ': ' + err.msg()) }
+		if row.status == .live {
+			store.snapshot(profile, row.kind, row.slot, .game_backup) or { eprintln('Previous save unavailable for ' + row.name + ': ' + err.msg()) }
 		}
 	}
 	mut server := &http.Server{ listener: listener, addr: addr, worker_num: 4, max_keep_alive_requests: 1, max_http1_request_body_size: 8192, handler: App{ store: store, addr: addr, token: rand.uuid_v4() } }

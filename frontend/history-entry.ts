@@ -1,4 +1,4 @@
-import type { Save } from './model';
+import { SaveKind, type Save } from './model';
 
 export function historyEntry(row: Save) {
   switch (row.status) {
@@ -21,13 +21,13 @@ function localTime(value: string) {
 }
 export function historyDates(row: Save): string[] {
   const dates: string[] = [];
-  if (row.status !== 'Live') {
-    if (row.captured) dates.push('Backed up ' + localTime(row.captured));
-    else if (row.record_modified)
-      dates.push('Backup record modified ' + localTime(row.record_modified));
-    else dates.push('Backup time unknown');
-  }
-  if (row.kind === 'World' && row.world_created)
+  if (row.status !== 'Live')
+    dates.push(
+      row.captured
+        ? 'Backed up ' + localTime(row.captured)
+        : 'Backup time unknown',
+    );
+  if (row.kind === SaveKind.World && row.world_created)
     dates.push('Created ' + row.world_created);
   dates.push(
     'Modified ' +

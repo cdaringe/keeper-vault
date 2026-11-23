@@ -34,7 +34,7 @@ if (!binaryArg || !checkpointArg)
   );
 const source = resolve(checkpointArg);
 const id = basename(source);
-assert.match(id, /^(checkpoint-|boss-)/);
+assert.match(id, /^checkpoint-/);
 const original = await digest(source);
 const work = await mkdtemp(join(tmpdir(), 'keeper-recovery-'));
 try {

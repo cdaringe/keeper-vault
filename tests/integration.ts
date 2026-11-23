@@ -9,7 +9,6 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import {
   stat,
-  rename,
   mkdtemp,
   cp,
   readFile,
@@ -99,7 +98,7 @@ try {
         single.checkpoint_saves[0].source_modified,
         current.source_modified,
       );
-      // Older checkpoints may not have recorded the original save time.
+      // A snapshot can lack a recorded source modification time.
       const root = join(
         work,
         'data',
@@ -145,7 +144,6 @@ try {
       for (const [op, id] of [
         ['activate', manual.id],
         ['restore_checkpoint', points[0]],
-        ['retry', points[0]],
       ]) {
         await assert.rejects(call(op, id), /423 Restore blocked/);
       }
@@ -179,7 +177,6 @@ try {
         source_modified: member.source_modified,
       })),
     );
-    // Simulate the directory name used by an earlier installation.
     const library = join(
       work,
       'data',
@@ -188,23 +185,20 @@ try {
     );
     await writeFile(
       join(library, 'labels.json'),
-      JSON.stringify({ [world.id]: { alias: 'Old nickname', pinned: true } }),
+      JSON.stringify({ [world.id]: { alias: 'My nickname', pinned: true } }),
     );
-    const migrated = (await call()).find((r) => r.id === world.id);
-    assert.equal(migrated.note, 'Old nickname');
-    assert.equal(migrated.name, world.name);
-    assert.equal(migrated.pinned, true);
+    const aliased = (await call()).find((r) => r.id === world.id);
+    assert.equal(aliased.note, 'My nickname');
+    assert.equal(aliased.name, world.name);
+    assert.equal(aliased.pinned, true);
     await call('note', world.id, '');
     assert.equal((await call()).find((r) => r.id === world.id).note, '');
     await call('note', points[0], 'Explored western caves');
-    const legacy = points[0].replace(/^checkpoint-/, 'boss-');
-    assert.notEqual(legacy, points[0]);
-    await rename(join(library, points[0]), join(library, legacy));
     assert.equal(
-      (await capture()).find((r) => r.id === legacy).note,
+      (await capture()).find((r) => r.id === points[0]).note,
       'Explored western caves',
     );
-    assert.deepEqual(ids(await capture()), [legacy]);
+    assert.deepEqual(ids(await capture()), points);
     for (let attempt = 0; attempt < 2; attempt++) {
       const failed: [string, Buffer][] = [];
       for (const r of [world, char]) {
@@ -216,7 +210,7 @@ try {
         failed.push([r.kind, content]);
       }
       if (!attempt) assert.equal(ids(await capture()).length, 2);
-      const rows = await call('restore_checkpoint', legacy);
+      const rows = await call('restore_checkpoint', points[0]);
       assert.deepEqual(await digest(profile), initial);
       assert.equal(ids(await capture()).length, 2);
       for (const [kind, content] of failed) {
@@ -271,8 +265,12 @@ try {
       assert.deepEqual(await digest(profile), initial);
       labelled = copy.id;
     }
-    await assert.rejects(call('delete_checkpoint', world.id), /409/);
-    await assert.rejects(call('delete_checkpoint', manual.id), /409/);
+    await assert.rejects(
+      call('unknown_action', world.id),
+      /409 Unknown action/,
+    );
+    await assert.rejects(call('trash_checkpoint', world.id), /409/);
+    await assert.rejects(call('trash_checkpoint', manual.id), /409/);
     let remaining = await call();
     for (const point of remaining.filter((r) => r.kind === 'Checkpoint')) {
       const expected = remaining
@@ -280,7 +278,7 @@ try {
         .map((r) => r.id)
         .sort();
       await assert.rejects(call('purge_checkpoint', point.id, point.id), /409/);
-      const deleted = (await call('delete_checkpoint', point.id)).find(
+      const deleted = (await call('trash_checkpoint', point.id)).find(
         (r) => r.status === 'Trashed',
       );
       const recovered = await call('recover_checkpoint', deleted.id);

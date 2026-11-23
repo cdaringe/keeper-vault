@@ -2,35 +2,48 @@ module layout
 
 import os
 
+pub enum SaveKind {
+	character @[json: 'Character']
+	world @[json: 'World']
+	checkpoint @[json: 'Checkpoint']
+}
+
+pub fn (kind SaveKind) label() string {
+	return kind.str().capitalize()
+}
+
 pub const game_backup_suffix = '.pugbackup'
 
 pub fn numeric(s string) bool {
 	return s != '' && s.bytes().all(it >= `0` && it <= `9`)
 }
 
-pub fn primary_save(kind string, slot string) string {
-	if kind == 'Character' { return os.join_path('saves', slot + '.json') }
-	return os.join_path('worlds', slot + '.world.gzip')
+pub fn primary_save(kind SaveKind, slot string) string {
+	return match kind {
+		.character { os.join_path('saves', slot + '.json') }
+		.world { os.join_path('worlds', slot + '.world.gzip') }
+		.checkpoint { panic('A checkpoint has no primary save file') }
+	}
 }
 
-pub fn metadata_save(kind string, slot string) string {
-	if kind == 'Character' { return primary_save(kind, slot) }
-	return os.join_path('worldinfos', slot + '.worldinfo')
+pub fn metadata_save(kind SaveKind, slot string) string {
+	if kind == .world { return os.join_path('worldinfos', slot + '.worldinfo') }
+	return primary_save(kind, slot)
 }
 
-fn save_parts(kind string, slot string) []string {
+fn save_parts(kind SaveKind, slot string) []string {
 	primary := primary_save(kind, slot)
-	if kind == 'Character' { return [primary] }
+	if kind == .character { return [primary] }
 	return [primary, metadata_save(kind, slot), os.join_path('worldgenparams', slot + '.json')]
 }
 
-pub fn save_files(root string, kind string, slot string) ![]string {
+pub fn save_files(root string, kind SaveKind, slot string) ![]string {
 	mut result := []string{}
 	for p in save_parts(kind, slot) {
 		result << p
 		result << p + game_backup_suffix
 	}
-	if kind == 'Character' {
+	if kind == .character {
 		dir := 'maps/' + slot
 		if os.is_link(os.join_path(root, 'maps')) || os.is_link(os.join_path(root, dir)) {
 			return error('Linked map directories are unsupported')
